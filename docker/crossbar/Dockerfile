@@ -5,7 +5,7 @@ MAINTAINER Marc Easen <marc@easen.co.uk>
 RUN apt-get update -y && apt-get install -y python-pip
 
 RUN pip install --upgrade twisted
-RUN pip install ez_setup six pyopenssl pycrypto wsaccel ujson
+RUN pip install ez_setup six pyopenssl pycrypto wsaccel ujson setproctitle
 RUN pip install --upgrade distribute
 
 RUN pip install crossbar[all]

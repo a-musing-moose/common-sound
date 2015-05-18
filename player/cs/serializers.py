@@ -32,7 +32,8 @@ class Track(Serializer):
         return {
             "name": self.obj.name,
             "artists": artists,
-            "duration": self.obj.duration
+            "duration": self.obj.duration,
+            "album": Album(self.obj.album).data
         }
 
 

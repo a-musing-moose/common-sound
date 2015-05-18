@@ -4,7 +4,8 @@
         <h1>Common Sound Tester</h1>
 
         <div>
-            <textarea id="output" cols="80" rows="10"></textarea>
+            <textarea id="output" cols="80" rows="33" style="font-size:8px;color:#FFFFFF;background-color:#000000;"></textarea>
+            <img id="current-album" width="300" height="300" src=""/>
             <br/>
             <button id="clear">Clear</button>
         </div>
@@ -40,6 +41,7 @@
         <script>
             var sound = null;
             var wsuri;
+            var current_image_uri = null;
 
             if (document.location.origin == "file://") {
                 wsuri = "ws://127.0.0.1:8080/ws";
@@ -49,7 +51,7 @@
 
             var connection = new autobahn.Connection({
                 url: wsuri,
-                realm: "realm1"
+                realm: "player"
             });
 
             function onEmit(args) {
@@ -58,14 +60,21 @@
                 s = s.charAt(0).toUpperCase() + s.slice(1);
                 try {
                     s = s + " - " + state.track.name;
+                    if (state.track.album.cover_uri != current_image_uri) {
+                        current_image_uri = state.track.album.cover_uri
+                        sound.cover_image(current_image_uri).then(function(result) {
+                            var image = document.getElementById("current-album");
+                            image.src = result.data;
+                        });
+                    }
                 } catch(e){}
                 try {
                     s = s + " (next: " + state.next.name + ")";
                 } catch(e){}
-                var pl = ""
+                var pl = "Playlist:\n";
                 for (var i=0; i<state.play_list.length; i++) {
                     var track = state.play_list[i];
-                    pl = pl + "[" + i + "]: " + track.name + "\n";
+                    pl = pl + "  [" + i + "]: " + track.name + "\n";
                 }
                 log(pl);
                 document.title = s;

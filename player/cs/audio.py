@@ -1,12 +1,51 @@
 # -*- coding: utf-8 -*-
+import sys
 import spotify
 import logging
-from collections import deque
 
+from collections import deque
 from asyncio import coroutine, sleep, get_event_loop, async
+from spotify.sink import Sink
+
 from . import serializers
 
 logging.basicConfig(level=logging.CRITICAL)
+
+
+class AlsaSink(Sink):
+
+    def __init__(self, session, card=-1):
+        self._session = session
+        self._card = card
+
+        import alsaaudio  # Crash early if not available
+        self._alsaaudio = alsaaudio
+        self._device = None
+
+        self.on()
+
+    def _on_music_delivery(self, session, audio_format, frames, num_frames):
+        assert (
+            audio_format.sample_type == spotify.SampleType.INT16_NATIVE_ENDIAN)
+
+        if self._device is None:
+            self._device = self._alsaaudio.PCM(
+                mode=self._alsaaudio.PCM_NONBLOCK, cardindex=self._card)
+            if sys.byteorder == 'little':
+                self._device.setformat(self._alsaaudio.PCM_FORMAT_S16_LE)
+            else:
+                self._device.setformat(self._alsaaudio.PCM_FORMAT_S16_BE)
+            self._device.setrate(audio_format.sample_rate)
+            self._device.setchannels(audio_format.channels)
+            self._device.setperiodsize(num_frames * audio_format.frame_size())
+
+        return self._device.write(frames)
+
+    def _close(self):
+        if self._device is not None:
+            self._device.close()
+            self._device = None
+
 
 class Spotify(object):
 
@@ -21,7 +60,7 @@ class Spotify(object):
         self.session = spotify.Session()
         self.player = self.session.player
         loop = spotify.EventLoop(self.session)
-        self.audio = spotify.AlsaSink(self.session)
+        self.audio = AlsaSink(self.session)
         loop.start()
         self.session.on(
             spotify.SessionEvent.END_OF_TRACK,
@@ -91,9 +130,13 @@ class Spotify(object):
         return serializers.Image(image).data
 
     def pause(self):
-        self.player.pause()
+        if self.player.state == spotify.PlayerState.PLAYING:
+            self.player.pause()
+        elif self.player.state == spotify.PlayerState.PAUSED:
+            self.player.play()
         return self.status
 
+    @coroutine
     def enqueue(self, uri):
         track = self.session.get_track(uri)
         while track.is_loaded is False:

@@ -1,0 +1,13 @@
+router_dsn:
+    env: ROUTER_DSN
+    default: "ws://127.0.0.1:8080/ws"
+realm: player
+name: Common Sound
+component: cs.components.CommonSound
+commands:
+    - cs.commands.Moo
+spotify_user:
+    env: SPOTIFY_USER
+    default: xiris
+spotify_password:
+    env: SPOTIFY_PASSWORD

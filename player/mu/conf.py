@@ -1,22 +1,19 @@
 import os
-import json
+import yaml
 
 
-class Settings(object):
+class YamlSettings(object):
 
     def __init__(self):
         source = os.environ.get("MU_SETTINGS", None)
         if source is None:
             raise Exception("MU_SETTINGS has not been defined")
-        try:
-            self.json = json.loads(source)
-        except ValueError:
-            with open(source, 'r') as f:
-                self.json = json.load(f)
+        with open(source, "r") as f:
+            self.data = yaml.safe_load(f)
 
     def __getattr__(self, key):
         try:
-            value = self.json[key]
+            value = self.data[key]
         except KeyError:
             raise AttributeError(key)
         if isinstance(value, dict) and 'env' in value:
@@ -35,4 +32,4 @@ class Settings(object):
             return default
 
 
-settings = Settings()
+settings = YamlSettings()

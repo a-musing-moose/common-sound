@@ -25,7 +25,7 @@ def bootstrap():
         '-s',
         '--settings',
         dest='settings',
-        default="settings.json",
+        default="settings.yml",
         required=False
     )
     args = parser.parse_args(sys.argv[1:2])

@@ -3,3 +3,4 @@ pyinotify==0.9.5
 colorama==0.3.3
 pyalsaaudio>=0.8.2,<0.9
 pyspotify==2.0.0b5
+PyYAML>=3.11,<4.0
