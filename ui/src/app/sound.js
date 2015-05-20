@@ -1,6 +1,6 @@
 /*jslint browser:true */
 
-CommonSound = function(session, listener) {
+CommonSound = function(session, onStatus, onPlaylist) {
 
     this._session = session;
     this._uri_prefixes = {
@@ -52,10 +52,14 @@ CommonSound = function(session, listener) {
         return session.call("sound.enqueue", [uri, session.id])
     }
 
-    this.addStatusListener = function(callback) {
-        this.state_listeners.push(callback);
+    this.playlist = function() {
+        session = this.session();
+        return session.call("sound.playlist");
     }
 
-    session.subscribe('sound.status', listener);
+    session.subscribe('sound.status', onStatus);
+    session.subscribe('sound.new_playlist', onPlaylist);
 
 }
+
+module.exports = CommonSound;

@@ -65,7 +65,7 @@ def get_commands(settings):
 
 def print_commands(commands):
     init()
-    print("\nAvailable sub-commands:")
+    print("\nAvailable commands:")
     groups = defaultdict(list)
     for command in commands.values():
         groups[command.get_group()].append(command)

@@ -3,7 +3,6 @@ import sys
 import spotify
 import logging
 
-from collections import deque
 from asyncio import coroutine, sleep, get_event_loop, async
 from spotify.sink import Sink
 
@@ -47,15 +46,42 @@ class AlsaSink(Sink):
             self._device = None
 
 
+class Playlist(object):
+
+    def __init__(self):
+        self.index = 0
+        self.playlist = []
+
+    def add_track(self, track):
+        self.playlist.append(track)
+
+    def next_track(self):
+        if len(self.playlist) > 0:
+            self.index += 1
+            if self.index >= len(self.playlist):
+                self.index = 0
+            return self.playlist[self.index]
+        return None
+
+    def __iter__(self):
+        return self.playlist.__iter__()
+
+    def __getitem__(self, key):
+        return self.playlist[key]
+
+    def __len__(self):
+        return len(self.playlist)
+
+
 class Spotify(object):
 
-    TRACK_ADDED = "sound.on_track_added"
+    PLAYLIST = "sound.new_playlist"
     STATUS = "sound.status"
 
     def __init__(self, component):
         self.loop = get_event_loop()
         self.component = component
-        self.queue = deque()
+        self.queue = Playlist()
         self.track = None
         self.session = spotify.Session()
         self.player = self.session.player
@@ -79,11 +105,10 @@ class Spotify(object):
         self.next_tune()
 
     def next_tune(self):
-        if len(self.queue) > 0:
-            self.queue.rotate(-1)
-        track = self.queue[0]
-        self.logger.info("add {} to event loop".format(track.name))
-        self.loop.call_soon_threadsafe(async, self.play(track.link.uri))
+        track = self.queue.next_track()
+        if track:
+            self.logger.info("add {} to event loop".format(track.name))
+            self.loop.call_soon_threadsafe(async, self.play(track.link.uri))
 
     def login(self, user, password):
         self.session.login(user, password)
@@ -92,13 +117,16 @@ class Spotify(object):
     def find(self, q):
         results = self.session.search(q)
         while results.is_loaded is False:
-            yield from sleep(1)
+            yield from sleep(0.1)
         response = {
             "state": self.player.state,
             "did_you_mean": results.did_you_mean,
             "artists": [],
+            "artist_total": results.artist_total,
             "tracks": [],
-            "albums": []
+            "track_total": results.track_total,
+            "albums": [],
+            "album_total": results.album_total
         }
         for t in results.tracks:
             track = serializers.Track(t)
@@ -115,7 +143,7 @@ class Spotify(object):
     def play(self, uri):
         track = self.session.get_track(uri)
         while track.is_loaded is False:
-            yield from sleep(1)
+            yield from sleep(0.1)
         self.track = track
         self.logger.info("playing {}".format(track.name))
         self.player.load(track)
@@ -126,7 +154,7 @@ class Spotify(object):
     def cover_image(self, uri):
         image = self.session.get_image(uri)
         while image.is_loaded is False:
-            yield from sleep(1)
+            yield from sleep(0.1)
         return serializers.Image(image).data
 
     def pause(self):
@@ -137,23 +165,24 @@ class Spotify(object):
         return self.status
 
     @coroutine
-    def enqueue(self, uri):
+    def enqueue(self, uri, session_id):
+        self.logger.info("session: {}".format(session_id))
         track = self.session.get_track(uri)
         while track.is_loaded is False:
-            yield from sleep(1)
+            yield from sleep(0.1)
 
-        self.queue.append(track)
+        self.queue.add_track(track)
         if self.player.state != spotify.PlayerState.PLAYING:
             self.logger.info("not playing so play straight away")
             self.next_tune()
         else:
             self.logger.info("playing so lets enqueue")
+        self.component.publish(self.PLAYLIST, self.playlist())
         return self.status
 
-    @property
-    def play_list(self):
+    def playlist(self):
         play_list = []
-        for track in list(self.queue)[0:5]:
+        for track in self.queue:
             t = serializers.Track(track)
             play_list.append(t.data)
         return play_list
@@ -163,8 +192,7 @@ class Spotify(object):
         state = {
             "state": self.player.state,
             "track": None,
-            "next": None,
-            "play_list": self.play_list
+            "next": None
         }
         if self.track is not None:
             t = serializers.Track(self.track)
