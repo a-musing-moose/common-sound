@@ -1,7 +1,8 @@
 /** In this file, we create a React component which incorporates components provided by material-ui */
 
 var React = require('react'),
-    CommonSound = require('../sound.js');
+    autobahn = require("autobahn"),
+    CommonSound = require('../sound.js'),
     mui = require('material-ui'),
     TrackList = require('./track-list.jsx'),
     RaisedButton = mui.RaisedButton,
