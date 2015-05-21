@@ -4,9 +4,11 @@
 
 .track {
     padding-bottom: 0.5em;
-    transition: all 1250ms ease;
-    box-sizing: border-box;
 
+    .track-content {
+        text-align: left;
+        padding-left: 1em;
+    }
     .track-title {
          padding-top: 0.6em;
          padding-bottom: 0.6em;
@@ -19,6 +21,16 @@
     }
 
     .track-paper {
-        background-color: white;
+        background-color: @white;
+        height: 2.8em;
+    }
+
+    .vote-button {
+        position: relative;
+        float: right;
+    }
+
+    .track-duration {
+        margin-left: 0.5em;
     }
 }

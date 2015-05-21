@@ -3,8 +3,11 @@
 var React = require('react'),
     autobahn = require("autobahn"),
     CommonSound = require('../sound.js'),
+    ConsoleApi = require('../console-api.js'),
     mui = require('material-ui'),
     TrackList = require('./track-list.jsx'),
+    Search = require('./search.jsx'),
+    Todo = require('./todo.jsx'),
     RaisedButton = mui.RaisedButton,
     AppCanvas = mui.AppCanvas,
     Snackbar = mui.Snackbar,
@@ -17,7 +20,8 @@ var Main = React.createClass({
             sound: null,
             track: {"uri": null},
             playlist: [],
-            votes: []
+            votes: [],
+            searchResults: null
         };
     },
 
@@ -37,13 +41,16 @@ var Main = React.createClass({
 
         // fired when connection is established and session attached
         connection.onopen = function (session, details) {
-            console.log("Connected");
             var sound = new CommonSound(
                 session,
                 self.onStatus,
                 self.onPlaylist
             );
             self.setState({"sound": sound});
+
+            //provides quick console access if needed
+            ConsoleApi.init(sound);
+
             sound.playlist().then(function(result){
                 self.setState({"playlist": result});
             });
@@ -51,7 +58,9 @@ var Main = React.createClass({
 
         // fired when connection was lost (or could not be established)
         connection.onclose = function (reason, details) {
-            console.log("Connection lost: " + reason);
+            if (typeof console == 'object') {
+                console.log("Connection lost: " + reason);
+            }
         }
         connection.open();
     },
@@ -87,7 +96,7 @@ var Main = React.createClass({
 
         return (
             <AppCanvas>
-                <div className="mui-app-content-canvas">
+                <div className="mui-app-content-canvas" onClick={this.clearSearch}>
                     <div className="home-page-hero full-width-section">
                         <div className="home-page-hero-content">
                             <div className="tagline">
@@ -101,23 +110,20 @@ var Main = React.createClass({
 
                     <div className="full-width-section home-purpose">
                         <div className="full-width-section-content">
-                            <TextField
-                                ref="searchbox"
-                                className="search-box"
-                                hintText="Eyedea & Abilities"
-                                floatingLabelText="Search for a track or artist" />
-                            <RaisedButton
-                                label="Lets Play!"
-                                onTouchTap={this.search}
-                                linkButton={true} primary={true} />
+                            <Search
+                                onSearch={this.search}
+                                results={this.state.searchResults}
+                                clearSearch={this.clearSearch}
+                                enqueue={this.enqueue}/>
                             <TrackList tracks={this.state.playlist} current={this.state.track} onVote={this.vote} votes={this.state.votes} />
                         </div>
                     </div>
 
                     <div className="full-width-section footer">
                         <p>
-                            Hand crafted with love by A Musing Moose and Frankie Boomstick.
+                            Hand crafted with love by a-musing-moose and Frankie Boomstick.
                         </p>
+                        <Todo />
                     </div>
                 </div>
                 {currentTrack}
@@ -125,12 +131,15 @@ var Main = React.createClass({
         );
     },
 
-    search: function() {
-        var q = this.refs.searchbox.getValue();
-        this.refs.searchbox.clearValue();
+    search: function(q) {
+        var self = this;
         this.state.sound.find(q).then(function(result){
-            console.log(result);
+            self.setState({"searchResults": result});
         });
+    },
+
+    clearSearch: function() {
+        this.setState({"searchResults": null});
     },
 
     vote: function(uri) {
@@ -140,6 +149,10 @@ var Main = React.createClass({
         this.state.sound.vote(uri).then(function(){
             self.setState(votes);
         });
+    },
+
+    enqueue: function(uri) {
+        this.state.sound.enqueue(uri);
     }
 
 });

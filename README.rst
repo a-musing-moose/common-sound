@@ -15,11 +15,7 @@ with the following command.
 
 .. code-block:: bash
 
-    pip install -r requirements.txt
-
-
-.. warning::
-    There is currently a minor patch needed on the pyspotify library
+    make setup-dev
 
 
 Once all the requirements have been installed you need to supply the
@@ -46,3 +42,27 @@ You can finally run the player component as follows:
     cd player
     ./run.py start_service
 
+
+The front end is written with the aid of ReactJS, you can find this part in the
+``ui`` folder. Gulp is used to automatically build everything. To install the
+node requirements:
+
+.. code-block:: bash
+
+    cd ui
+    npm install
+
+Then to run the watcher that initiates a rebuild on changes being save:
+
+.. code-block:: bash
+
+    cd ui
+    npm start
+
+
+Roadmap
+-------
+
+- Make the sorting after votes less sucky
+- Add "skip this" action to allow consensus voting on skipping certain tracks
+- Tidy up less files and make a little more consistent

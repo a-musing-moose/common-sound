@@ -53,6 +53,11 @@ class Playlist(object):
         self.playlist = []
 
     def add_track(self, session_id, track):
+        for t in self.playlist:
+            if track.link.uri == t['track'].link.uri:
+                # already in playlist, treat as a vote
+                self.add_vote(track.link.uri, session_id)
+                return
         self.playlist.append({
             "track": track,
             "votes": [
@@ -65,6 +70,7 @@ class Playlist(object):
         if len(self.playlist) > 0:
             self.index += 1
             if self.index >= len(self.playlist):
+                self.full_sort()
                 self.index = 0
             return self.playlist[self.index]["track"]
         return None
@@ -74,14 +80,20 @@ class Playlist(object):
             entry_uri = entry["track"].link.uri
             if uri == entry_uri and session_id not in entry['votes']:
                 entry["votes"].append(session_id)
-        self.sort()
+        self.partial_sort()
 
-    def sort(self):
-        current = self.playlist.pop(self.index)
-        remainder = self.playlist[0:self.index] + self.playlist[self.index:]
-        remainder.sort(key=lambda t: len(t["votes"]), reverse=True)
-        self.playlist = [current] + remainder
-        self.index = 0
+    def _sort(self, items):
+        items.sort(key=lambda t: len(t["votes"]), reverse=True)
+        return items
+
+    def partial_sort(self):
+        head = self.playlist[0:self.index+1]
+        tail = self.playlist[self.index+1:]
+        tail = self._sort(tail)
+        self.playlist = head + tail
+
+    def full_sort(self):
+        self.playlist = self._sort(self.playlist)
 
     def __iter__(self):
         data = [d["track"] for d in self.playlist]
@@ -187,7 +199,6 @@ class Spotify(object):
 
     @coroutine
     def enqueue(self, uri, session_id):
-        self.logger.info("session: {}".format(session_id))
         track = self.session.get_track(uri)
         while track.is_loaded is False:
             yield from sleep(0.1)
