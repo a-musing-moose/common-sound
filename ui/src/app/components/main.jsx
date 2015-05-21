@@ -16,7 +16,8 @@ var Main = React.createClass({
         return {
             sound: null,
             track: {"uri": null},
-            playlist: []
+            playlist: [],
+            votes: []
         };
     },
 
@@ -73,7 +74,6 @@ var Main = React.createClass({
     },
 
     onPlaylist: function (args) {
-        console.log(args[0]);
         this.setState({"playlist": args[0]});
     },
 
@@ -110,7 +110,7 @@ var Main = React.createClass({
                                 label="Lets Play!"
                                 onTouchTap={this.search}
                                 linkButton={true} primary={true} />
-                            <TrackList tracks={this.state.playlist} current={this.state.track} />
+                            <TrackList tracks={this.state.playlist} current={this.state.track} onVote={this.vote} votes={this.state.votes} />
                         </div>
                     </div>
 
@@ -125,15 +125,20 @@ var Main = React.createClass({
         );
     },
 
-    _onLeftIconButtonTouchTap: function() {
-        this.refs.leftNav.toggle();
-    },
-
     search: function() {
         var q = this.refs.searchbox.getValue();
         this.refs.searchbox.clearValue();
         this.state.sound.find(q).then(function(result){
             console.log(result);
+        });
+    },
+
+    vote: function(uri) {
+        var self = this;
+        var votes = this.state.votes;
+        votes.push(uri);
+        this.state.sound.vote(uri).then(function(){
+            self.setState(votes);
         });
     }
 

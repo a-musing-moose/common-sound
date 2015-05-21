@@ -57,6 +57,11 @@ CommonSound = function(session, onStatus, onPlaylist) {
         return session.call("sound.playlist");
     }
 
+    this.vote = function(uri) {
+        session = this.session();
+        return session.call("sound.vote", [uri, session.id]);
+    }
+
     session.subscribe('sound.status', onStatus);
     session.subscribe('sound.new_playlist', onPlaylist);
 

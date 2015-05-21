@@ -52,22 +52,43 @@ class Playlist(object):
         self.index = 0
         self.playlist = []
 
-    def add_track(self, track):
-        self.playlist.append(track)
+    def add_track(self, session_id, track):
+        self.playlist.append({
+            "track": track,
+            "votes": [
+                session_id,
+            ],
+            "poop": 0
+        })
 
     def next_track(self):
         if len(self.playlist) > 0:
             self.index += 1
             if self.index >= len(self.playlist):
                 self.index = 0
-            return self.playlist[self.index]
+            return self.playlist[self.index]["track"]
         return None
 
+    def add_vote(self, uri, session_id):
+        for entry in self.playlist:
+            entry_uri = entry["track"].link.uri
+            if uri == entry_uri and session_id not in entry['votes']:
+                entry["votes"].append(session_id)
+        self.sort()
+
+    def sort(self):
+        current = self.playlist.pop(self.index)
+        remainder = self.playlist[0:self.index] + self.playlist[self.index:]
+        remainder.sort(key=lambda t: len(t["votes"]), reverse=True)
+        self.playlist = [current] + remainder
+        self.index = 0
+
     def __iter__(self):
-        return self.playlist.__iter__()
+        data = [d["track"] for d in self.playlist]
+        return data.__iter__()
 
     def __getitem__(self, key):
-        return self.playlist[key]
+        return self.playlist[key]["track"]
 
     def __len__(self):
         return len(self.playlist)
@@ -171,7 +192,7 @@ class Spotify(object):
         while track.is_loaded is False:
             yield from sleep(0.1)
 
-        self.queue.add_track(track)
+        self.queue.add_track(session_id, track)
         if self.player.state != spotify.PlayerState.PLAYING:
             self.logger.info("not playing so play straight away")
             self.next_tune()
@@ -180,7 +201,12 @@ class Spotify(object):
         self.component.publish(self.PLAYLIST, self.playlist())
         return self.status
 
-    def playlist(self):
+    def vote(self, uri, session_id):
+        self.queue.add_vote(uri, session_id)
+        self.component.publish(self.PLAYLIST, self.playlist())
+        return self.status
+
+    def playlist(self, *args, **kwargs):
         play_list = []
         for track in self.queue:
             t = serializers.Track(track)

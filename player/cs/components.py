@@ -25,4 +25,5 @@ class CommonSound(ApplicationSession):
         yield from self.register(self.spotify.cover_image, 'sound.cover_image')
         yield from self.register(self.spotify.enqueue, 'sound.enqueue')
         yield from self.register(self.spotify.playlist, 'sound.playlist')
+        yield from self.register(self.spotify.vote, 'sound.vote')
         yield from self.spotify.emit_status()
