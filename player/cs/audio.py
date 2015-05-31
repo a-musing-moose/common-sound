@@ -74,6 +74,7 @@ class Spotify(object):
     def on_track_ends(self, session):
         self.logger.info("track ended")
         self.track = None
+        self.loop.call_soon_threadsafe(async, self.next_tune())
         self.next_tune()
 
     @coroutine
