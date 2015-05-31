@@ -20,7 +20,8 @@ var Main = React.createClass({
             sound: null,
             track: {"uri": null},
             playlist: [],
-            votes: [],
+            voteUps: [],
+            voteDowns: [],
             searchResults: null
         };
     },
@@ -96,7 +97,7 @@ var Main = React.createClass({
 
         return (
             <AppCanvas>
-                <div className="mui-app-content-canvas" onClick={this.clearSearch}>
+                <div className="mui-app-content-canvas">
                     <div className="home-page-hero full-width-section">
                         <div className="home-page-hero-content">
                             <div className="tagline">
@@ -115,7 +116,7 @@ var Main = React.createClass({
                                 results={this.state.searchResults}
                                 clearSearch={this.clearSearch}
                                 enqueue={this.enqueue}/>
-                            <TrackList tracks={this.state.playlist} current={this.state.track} onVote={this.vote} votes={this.state.votes} />
+                            <TrackList tracks={this.state.playlist} current={this.state.track} onVoteUp={this.voteUp} onVoteDown={this.voteDown} votes={this.state.votes} />
                         </div>
                     </div>
 
@@ -142,12 +143,21 @@ var Main = React.createClass({
         this.setState({"searchResults": null});
     },
 
-    vote: function(uri) {
+    voteUp: function(uri) {
         var self = this;
-        var votes = this.state.votes;
+        var votes = this.state.voteUps;
         votes.push(uri);
-        this.state.sound.vote(uri).then(function(){
-            self.setState(votes);
+        this.state.sound.voteUp(uri).then(function(){
+            self.setState({voteUps: votes});
+        });
+    },
+
+    voteDown: function(uri) {
+        var self = this;
+        var votes = this.state.voteDowns;
+        votes.push(uri);
+        this.state.sound.voteDown(uri).then(function(){
+            self.setState({voteDowns: votes});
         });
     },
 

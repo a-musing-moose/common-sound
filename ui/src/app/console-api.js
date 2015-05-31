@@ -3,11 +3,14 @@ function registerApi(sound) {
     window.pause = function() {
         sound.pause();
     }
-    window.play = function(uri) {
-        sound.play(uri);
-    }
     window.sparkle = function() {
         sound.play("spotify:track:7bwQN3Qk0WcBQdkwHQuTho");
+    }
+    window.enqueue = function(uri) {
+        sound.enqueue(uri);
+    }
+    window.monkey = function(enabled) {
+        sound.monkey(enabled);
     }
 }
 
@@ -23,7 +26,8 @@ function printHelp() {
                 + "\n=============================================================================\n\n"
                 + "USAGE:\n"
                 + "\tpause() - pause or restart playback\n"
-                + "\tplay(spotifyTrackUri) - play a track immediately\n"
+                + "\tenqueue(spotifyTrackUri) - enqueue a track\n"
+                + "\tmonkey(enabled) - enable/disable music monkey\n"
                 + "\tsparkle() - :WARNING: try at your own risk!";
         console.log(msg);
     }

@@ -12,12 +12,12 @@ var TrackList = React.createClass({
                 isCurrent = true;
             }
             var voted = false;
-            if (this.props.votes.indexOf(track.uri) > -1) {
+            /*if (this.props.votes.indexOf(track.uri) > -1) {
                 voted = true;
-            }
+            }*/
             tracks.push(
                 <li key={track.uri} className="track">
-                    <Track track={track} isCurrent={isCurrent} onVote={this.props.onVote} voted={voted} />
+                    <Track track={track} isCurrent={isCurrent} onVoteUp={this.props.onVoteUp} onVoteDown={this.props.onVoteDown} voted={voted} />
                 </li>
             );
         }

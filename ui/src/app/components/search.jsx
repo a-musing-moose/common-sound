@@ -21,7 +21,7 @@ var Search = React.createClass({
             if (tracks.length <= 0) {
                 tracks.push(
                 <div key="no-results" className="mui-font-style-display-1">
-                    I ain&quot;t found shit.
+                    I ain&rsquo;t found shit.
                 </div>
                 );
             }

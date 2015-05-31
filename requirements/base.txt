@@ -3,3 +3,4 @@ colorama==0.3.3
 pyalsaaudio>=0.8.2,<0.9
 PyYAML>=3.11,<4.0
 pyspotify==2.0.0b5
+-e git+https://github.com/a-musing-moose/mu.git@e6dfbbf4aad38cd6cee6bf60ce0715f0b16afca3#egg=mu-dev

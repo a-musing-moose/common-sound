@@ -31,18 +31,28 @@ var Track = React.createClass({
                         <span className="track-duration mui-font-style-caption">[{duration}]</span>
                     </span>
                     <span className="vote-button">
-                    <FlatButton onClick={this.vote} disabled={this.props.voted}>
-                        <FontIcon className="fa fa-thumbs-up"/>
-                        <span className="mui-flat-button-label">Vote</span>
-                    </FlatButton>
-                </span>
+                        <FlatButton onClick={this.voteDown}>
+                            <FontIcon className="fa fa-thumbs-down"/>
+                            <span className="mui-flat-button-label">Vote</span>
+                        </FlatButton>
+                    </span>
+                    <span className="vote-button">
+                        <FlatButton onClick={this.voteUp} disabled={this.props.voted}>
+                            <FontIcon className="fa fa-thumbs-up"/>
+                            <span className="mui-flat-button-label">Vote</span>
+                        </FlatButton>
+                    </span>
                 </p>
             </Paper>
         );
     },
 
-    vote: function() {
-        this.props.onVote(this.props.track.uri);
+    voteUp: function() {
+        this.props.onVoteUp(this.props.track.uri);
+    },
+
+    voteDown: function() {
+        this.props.onVoteDown(this.props.track.uri);
     }
 });
 

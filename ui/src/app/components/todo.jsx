@@ -25,6 +25,8 @@ var Todo = React.createClass({
                     <ul>
                         <li>Improve search - add albums and artists</li>
                         <li>Add skip by consensus</li>
+                        <li>Add remove by consensus</li>
+                        <li>Add playlist persistence</li>
                         <li>Spend some time on the less files and front end tweaks</li>
                         <li>Make this dialog look less crap</li>
                     </ul>

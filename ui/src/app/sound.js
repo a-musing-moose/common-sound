@@ -57,9 +57,22 @@ CommonSound = function(session, onStatus, onPlaylist) {
         return session.call("sound.playlist");
     }
 
-    this.vote = function(uri) {
+    this.voteUp = function(uri) {
         session = this.session();
-        return session.call("sound.vote", [uri, session.id]);
+        return session.call("sound.vote_up", [uri, session.id]);
+    }
+
+    this.voteDown = function(uri) {
+        session = this.session();
+        return session.call("sound.vote_down", [uri, session.id]);
+    }
+
+    this.monkey = function(enabled) {
+        if (enabled) {
+            return session.call("monkey.enable")
+        } else {
+            return session.call("monkey.disable")
+        }
     }
 
     session.subscribe('sound.status', onStatus);

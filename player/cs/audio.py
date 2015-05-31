@@ -46,66 +46,6 @@ class AlsaSink(Sink):
             self._device = None
 
 
-class Playlist(object):
-
-    def __init__(self):
-        self.index = 0
-        self.playlist = []
-
-    def add_track(self, session_id, track):
-        for t in self.playlist:
-            if track.link.uri == t['track'].link.uri:
-                # already in playlist, treat as a vote
-                self.add_vote(track.link.uri, session_id)
-                return
-        self.playlist.append({
-            "track": track,
-            "votes": [
-                session_id,
-            ],
-            "poop": 0
-        })
-
-    def next_track(self):
-        if len(self.playlist) > 0:
-            self.index += 1
-            if self.index >= len(self.playlist):
-                self.full_sort()
-                self.index = 0
-            return self.playlist[self.index]["track"]
-        return None
-
-    def add_vote(self, uri, session_id):
-        for entry in self.playlist:
-            entry_uri = entry["track"].link.uri
-            if uri == entry_uri and session_id not in entry['votes']:
-                entry["votes"].append(session_id)
-        self.partial_sort()
-
-    def _sort(self, items):
-        items.sort(key=lambda t: len(t["votes"]), reverse=True)
-        return items
-
-    def partial_sort(self):
-        head = self.playlist[0:self.index+1]
-        tail = self.playlist[self.index+1:]
-        tail = self._sort(tail)
-        self.playlist = head + tail
-
-    def full_sort(self):
-        self.playlist = self._sort(self.playlist)
-
-    def __iter__(self):
-        data = [d["track"] for d in self.playlist]
-        return data.__iter__()
-
-    def __getitem__(self, key):
-        return self.playlist[key]["track"]
-
-    def __len__(self):
-        return len(self.playlist)
-
-
 class Spotify(object):
 
     PLAYLIST = "sound.new_playlist"
@@ -114,7 +54,6 @@ class Spotify(object):
     def __init__(self, component):
         self.loop = get_event_loop()
         self.component = component
-        self.queue = Playlist()
         self.track = None
         self.session = spotify.Session()
         self.player = self.session.player
@@ -137,11 +76,11 @@ class Spotify(object):
         self.track = None
         self.next_tune()
 
+    @coroutine
     def next_tune(self):
-        track = self.queue.next_track()
+        track = yield from self.component.call("playlist.next")
         if track:
-            self.logger.info("add {} to event loop".format(track.name))
-            self.loop.call_soon_threadsafe(async, self.play(track.link.uri))
+            self.loop.call_soon_threadsafe(async, self.play(track))
 
     def login(self, user, password):
         self.session.login(user, password)
@@ -171,6 +110,20 @@ class Spotify(object):
             album = serializers.Album(a)
             response['albums'].append(album.data)
         return response
+
+    @coroutine
+    def top_tracks(self, region='AU'):
+        top_tracks = self.session.get_toplist(
+            spotify.ToplistType.TRACKS,
+            region=region
+        )
+        while top_tracks.is_loaded is False:
+            yield from sleep(0.1)
+        tracks = []
+        for track in top_tracks.tracks:
+            t = serializers.Track(track)
+            tracks.append(t.data)
+        return tracks
 
     @coroutine
     def play(self, uri):
@@ -203,23 +156,42 @@ class Spotify(object):
         while track.is_loaded is False:
             yield from sleep(0.1)
 
-        self.queue.add_track(session_id, track)
+        yield from self.component.call(
+            "playlist.add",
+            session_id,
+            track.link.uri
+        )
         if self.player.state != spotify.PlayerState.PLAYING:
             self.logger.info("not playing so play straight away")
-            self.next_tune()
+            yield from self.next_tune()
         else:
             self.logger.info("playing so lets enqueue")
-        self.component.publish(self.PLAYLIST, self.playlist())
+        yield from self.emit_playlist()
         return self.status
 
-    def vote(self, uri, session_id):
-        self.queue.add_vote(uri, session_id)
-        self.component.publish(self.PLAYLIST, self.playlist())
+    @coroutine
+    def vote_up(self, uri, session_id):
+        yield from self.component.call("playlist.vote_up", uri, session_id)
+        yield from self.emit_playlist()
         return self.status
 
+    @coroutine
+    def vote_down(self, uri, session_id):
+        yield from self.component.call("playlist.vote_down", uri, session_id)
+        yield from self.emit_playlist()
+        tracks = yield from self.component.call("playlist.get_all")
+        if uri not in tracks:
+            yield from self.next_tune()
+        return self.status
+
+    @coroutine
     def playlist(self, *args, **kwargs):
         play_list = []
-        for track in self.queue:
+        tracks = yield from self.component.call("playlist.get_all")
+        for uri in tracks:
+            track = self.session.get_track(uri)
+            while track.is_loaded is False:
+                yield from sleep(0.1)
             t = serializers.Track(track)
             play_list.append(t.data)
         return play_list
@@ -228,20 +200,19 @@ class Spotify(object):
     def status(self):
         state = {
             "state": self.player.state,
-            "track": None,
-            "next": None
+            "track": None
         }
         if self.track is not None:
             t = serializers.Track(self.track)
             state['track'] = t.data
-
-        if len(self.queue) > 1:
-            n = serializers.Track(self.queue[1])
-            state['next'] = n.data
         return state
 
+    def emit_playlist(self):
+        play_list = yield from self.playlist()
+        self.component.publish(self.PLAYLIST, play_list)
+
+    @coroutine
     def emit_status(self):
         self.logger.info("emitting status")
         self.component.publish(self.STATUS, self.status)
-        yield from sleep(5)
-        self.loop.call_soon_threadsafe(async, self.emit_status())
+        self.loop.call_later(5, async, self.emit_status())
