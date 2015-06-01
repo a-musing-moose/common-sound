@@ -182,6 +182,7 @@ class Spotify(object):
         yield from self.emit_playlist()
         tracks = yield from self.component.call("playlist.get_all")
         if uri not in tracks:
+            # @Todo: Only if the removed track is what is currently playing
             yield from self.next_tune()
         return self.status
 
