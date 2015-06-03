@@ -77,6 +77,9 @@ CommonSound = function(session, onStatus, onPlaylist) {
 
     session.subscribe('sound.status', onStatus);
     session.subscribe('sound.new_playlist', onPlaylist);
+    session.subscribe('sound.force_refresh', function(){
+        location.reload();
+    });
 
 }
 

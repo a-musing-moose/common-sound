@@ -3,9 +3,6 @@ function registerApi(sound) {
     window.pause = function() {
         sound.pause();
     }
-    window.sparkle = function() {
-        sound.play("spotify:track:7bwQN3Qk0WcBQdkwHQuTho");
-    }
     window.enqueue = function(uri) {
         sound.enqueue(uri);
     }
