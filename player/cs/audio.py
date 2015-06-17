@@ -180,8 +180,7 @@ class Spotify(object):
     def vote_down(self, uri, session_id):
         yield from self.component.call("playlist.vote_down", uri, session_id)
         yield from self.emit_playlist()
-        tracks = yield from self.component.call("playlist.get_all")
-        if uri not in tracks:
+        if uri == self.track:
             # @Todo: Only if the removed track is what is currently playing
             yield from self.next_tune()
         return self.status

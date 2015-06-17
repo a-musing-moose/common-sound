@@ -27,4 +27,4 @@ class CommonSound(ApplicationSession):
         yield from self.spotify.emit_playlist()  # Update any existing clients
         yield from self.spotify.emit_status()  # Update any existing clients
         yield from self.spotify.next_tune()  # Get the sounds rolling
-        self.publish("sound.force_refresh") # Trigger reload of ui
+        self.publish("sound.force_refresh")  # Trigger reload of ui

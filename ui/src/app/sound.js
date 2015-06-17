@@ -1,4 +1,6 @@
 /*jslint browser:true */
+var soundId = require('./id.js');
+
 
 CommonSound = function(session, onStatus, onPlaylist) {
 
@@ -49,7 +51,7 @@ CommonSound = function(session, onStatus, onPlaylist) {
     this.enqueue = function(uri) {
         this.validate_uri("track", uri);
         session = this.session();
-        return session.call("sound.enqueue", [uri, session.id])
+        return session.call("sound.enqueue", [uri, soundId])
     }
 
     this.playlist = function() {
@@ -59,12 +61,12 @@ CommonSound = function(session, onStatus, onPlaylist) {
 
     this.voteUp = function(uri) {
         session = this.session();
-        return session.call("sound.vote_up", [uri, session.id]);
+        return session.call("sound.vote_up", [uri, soundId]);
     }
 
     this.voteDown = function(uri) {
         session = this.session();
-        return session.call("sound.vote_down", [uri, session.id]);
+        return session.call("sound.vote_down", [uri, soundId]);
     }
 
     this.monkey = function(enabled) {
